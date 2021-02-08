@@ -1,0 +1,41 @@
+stages:
+  - deploy_api
+  - build_service_prod
+  - build_web_prod
+
+job1:
+  stage: deploy_api
+  script:
+    - cd ./hrm-server
+    - mvn clean deploy -f pom-biz-facade.xml -e
+  only:
+    - tags
+  tags:
+    - mavenrunner01
+
+
+job2-3:
+  stage: build_service_prod
+  script:
+    - mvn clean package -f  ./hrm-server/pom-biz-service-server.xml
+    - docker login --username=100000583769 hkccr.ccs.tencentyun.com  -p Lesso2128
+    - docker build -t hkccr.ccs.tencentyun.com/samanea/hrmservice_prod:$CI_COMMIT_TAG ./ -f ./dockerfile_service
+    - docker push hkccr.ccs.tencentyun.com/samanea/hrmservice_prod:$CI_COMMIT_TAG
+    - docker rmi hkccr.ccs.tencentyun.com/samanea/hrmservice_prod:$CI_COMMIT_TAG
+  only:
+    - tags
+  tags:
+    - mavenrunner04
+
+job2-4:
+  stage: build_web_prod
+  script:
+    - mvn clean package -f ./hrm-server/pom-biz-web-server.xml
+    - docker login --username=100000583769 hkccr.ccs.tencentyun.com  -p Lesso2128
+    - docker build -t hkccr.ccs.tencentyun.com/samanea/hrmweb_prod:$CI_COMMIT_TAG ./ -f ./dockerfile_web
+    - docker push hkccr.ccs.tencentyun.com/samanea/hrmweb_prod:$CI_COMMIT_TAG
+    - docker rmi hkccr.ccs.tencentyun.com/samanea/hrmweb_prod:$CI_COMMIT_TAG
+  only:
+    - tags
+  tags:
+    - mavenrunner05
